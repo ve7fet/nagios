@@ -347,7 +347,9 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
             exit $exitCode;
         }
         case "bat_act_volt" {
-            my $bat_nom_volt = query_oid($oid_upsAdvBatteryNominalVoltage);
+#            my $bat_nom_volt = query_oid($oid_upsAdvBatteryNominalVoltage);
+#            VE7FET NominalVoltage OID not supported, hard code to 137
+	    my $bat_nom_volt = "134";
             my $bat_act_volt = query_oid($oid_upsAdvBatteryActualVoltage);
             $session->close();
             if ($bat_act_volt>$bat_nom_volt) {
@@ -361,6 +363,9 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
                     } elsif (defined $warning_threshold && $bat_act_volt <= $warning_threshold){
                         print "WARNING: Battery Actual Voltage ".$bat_act_volt."V is LOWER or Equal than the warning threshold of $warning_threshold";
                         $exitCode = $WARNING;
+		    } elsif ($bat_act_volt >= ($bat_nom_volt + 6)){ # Detect overcharge if 6V over nominal (14VPC)
+			print "CRITICAL: Battery Actual Voltage ".$bat_act_volt."V is EXCESSIVELY over Nominal Voltage of ".$bat_nom_volt."V";
+			$exitCode = $CRITICAL;
                     }else{
                         print "OK: Battery Actual Voltage is: ".$bat_act_volt."V";
                         $exitCode = $OKAY; 
