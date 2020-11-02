@@ -134,6 +134,8 @@ my $oid_upsBasicBatteryStatus           = ".1.3.6.1.4.1.318.1.1.1.2.1.1.0";     
 my $oid_upsAdvBatteryCapacity           = ".1.3.6.1.4.1.318.1.1.1.2.2.1.0";     # GAUGE
 my $oid_upsAdvBatteryTemperature        = ".1.3.6.1.4.1.318.1.1.1.2.2.2.0";     # GAUGE
 my $oid_upsAdvBatteryRunTimeRemaining   = ".1.3.6.1.4.1.318.1.1.1.2.2.3.0";     # TIMETICKS
+my $oid_upsBasicBatteryTimeOnBattery	= ".1.3.6.1.4.1.318.1.1.1.2.1.2.0";	# TIMETICKS
+my $oid_upsBasicBatteryLastReplaceDate	= ".1.3.6.1.4.1.318.1.1.1.2.1.3.0";	# DISPLAYSTRING
 my $oid_upsAdvBatteryReplaceIndicator   = ".1.3.6.1.4.1.318.1.1.1.2.2.4.0";     # INTEGER {noBatteryNeedsReplacing(1),batteryNeedsReplacing(2)}
 my $oid_upsAdvBatteryNumOfBattPacks     = ".1.3.6.1.4.1.318.1.1.1.2.2.5.0";     # INTEGER
 my $oid_upsAdvBatteryNumOfBadBattPacks  = ".1.3.6.1.4.1.318.1.1.1.2.2.6.0";     # INTEGER
@@ -224,15 +226,16 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
         }
         case "bat_status" {
             my $bat_status = query_oid($oid_upsBasicBatteryStatus);
+	    my $bat_replace_date = query_oid($oid_upsBasicBatteryLastReplaceDate);
             $session->close();
             if ($bat_status==2) {
-                print "OK: Battery Status is Normal\n";
+                print "OK: Battery Status is Normal. Last replaced $bat_replace_date\n";
                 exit $OKAY;
             } elsif ($bat_status==3) {
                 print "CRITICAL: Battery Status is LOW and the UPS is unable to sustain the current load.\n";
                 exit $CRITICAL;
 	    } elsif ($bat_status==4) {
-		print "CRITICAL: Battery in FAULT condition.\n";
+		print "CRITICAL: Battery in FAULT condition. Last replaced $bat_replace_date\n";
             } else {
                 print "UNKNOWN: Battery Status is UNKNOWN.\n";
                 exit $UNKNOWN;
@@ -305,10 +308,10 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
             my $bat_replace = query_oid($oid_upsAdvBatteryReplaceIndicator);
             $session->close();
             if ($bat_replace==2) {
-                print "WARNING: Battery Rack NEED a replacement\n";
+                print "WARNING: Battery Pack NEEDS a replacement\n";
                 exit $WARNING;
             } elsif ($bat_replace==1) {
-                print "OK: Battery Rack doesn't need a replacement\n";
+                print "OK: Battery Pack doesn't need a replacement\n";
                 exit $OKAY;
             }
         }
