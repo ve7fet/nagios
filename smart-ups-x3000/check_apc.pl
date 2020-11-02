@@ -159,8 +159,14 @@ my $oid_upsAdvInputFrequency            = ".1.3.6.1.4.1.318.1.1.1.3.2.4.0";     
 my $oid_upsAdvInputLineFailCause	= ".1.3.6.1.4.1.318.1.1.1.3.2.5.0";	# INTEGER {noTransfer(1),highLineVoltage(2),brownout(3),blackout(4),
 										# smallMomentarySag(5),deepMomentarySag(6),smallMomentarySpike(7),
 										# largeMomentarySpike(8),selfTest(9)rateOfVoltageChange(10)
-my $oid_upsBasicOutputStatus            = ".1.3.6.1.4.1.318.1.1.1.4.1.1.0";     # INTEGER {unknown(1),onLine(2),onBattery(3),onSmartBoost(4),timedSleeping(5),softwareBypass(6),
-                                                                                # off(7),rebooting(8),switchedBypass(9),hardwareFailureBypass(10),sleepingUntilPowerReturn(11),onSmartTrim(12)}
+my $oid_upsBasicOutputStatus            = ".1.3.6.1.4.1.318.1.1.1.4.1.1.0";     # INTEGER {unknown(1),onLine(2),onBattery(3),onSmartBoost(4),
+										# timedSleeping(5),softwareBypass(6),off(7),rebooting(8),
+										# switchedBypass(9),hardwareFailureBypass(10),sleepingUntilPowerReturn(11),
+										# onSmartTrim(12),ecoMode(13),hotStandby(14),onBatteryTest(15),
+										# emergencyStaticBypass(16),staticBypassStandby(17), powerSavingMode(18),
+										# spotMode(19),eConversion(20),chargerSpotmode(21),inverterSpotmode(22),
+										# activeLoad(23),batteryDischargeSpotmode(24),inverterStandby(25),
+										# chargerOnly(26)}
 my $oid_upsBasicOutputPhase             = ".1.3.6.1.4.1.318.1.1.1.4.1.2.0";     # INTEGER
 my $oid_upsAdvOutputVoltage             = ".1.3.6.1.4.1.318.1.1.1.4.2.1.0";     # GAUGE
 my $oid_upsAdvOutputHPVoltage		      = ".1.3.6.1.4.1.318.1.1.1.4.3.1.0";	    # GAUGE32
@@ -597,7 +603,7 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
         }
         case "out_status" {
             my $out_status = query_oid($oid_upsBasicOutputStatus);
-            my $out_status_code = {4 => 'onSmartBoost',5 => 'timedSleeping',6 => 'softwareBypass',8 => 'rebooting',9 => 'switchedBypass',11 => 'sleepingUntilPowerReturn',12 => 'onSmartTrim'};
+            my $out_status_code = {4 => 'onSmartBoost',5 => 'timedSleeping',6 => 'softwareBypass',8 => 'rebooting',9 => 'switchedBypass',11 => 'sleepingUntilPowerReturn',12 => 'onSmartTrim',17 => 'staticBypassStandby',21 => 'chargerSpotmode', 22 => 'inverterSpotmode', 23 => 'activeLoad'};
             $session->close();
             switch($out_status) {
                 case "1" {  #unknown
@@ -620,6 +626,46 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
                     print "CRITICAL: UPS is BYPASS due to HARDWARE FAILURE\n";
                     exit $CRITICAL;
                 }
+		case "13" {  #ecoMode
+		    print "OK: UPS is Running in EcoMode\n";
+		    exit $OKAY;
+		}
+		case "14" {  #hotStandby
+		    print "OK: UPS is Running in Hot Standby Mode\n";
+		    exit $OKAY;
+		}
+		case "15" {  #onBatteryTest
+		    print "OK: UPS is in Battery Test Mode\n";
+		    exit $OKAY;
+		}
+		case "16" {  #emergencyStaticBypass
+		    print "CRITICAL: UPS is in EMERGENCY STATIC BYPASS\n";
+		    exit $CRITICAL;
+		}
+		case "18" {  #powerSavingMode
+		    print "OK: UPS is in Power Saving Mode\n";
+		    exit $OKAY;
+		}
+		case "19" {  #spotMode
+		    print "OK: UPS is in Spot Mode\n";
+		    exit $OKAY;
+		}
+		case "20" {  #eConversion
+		    print "OK: UPS is in eConversion Mode\n";
+		    exit $OKAY;
+		}
+		case "24" {  #batteryDischargeSpotmode
+		    print "CRITICAL: UPS is in Battery DISCHARGE Spot Mode\n";
+		    exit $CRITICAL;
+		}
+		case "25" { #inverterStandby
+		    print "OK: UPS is on Inverter Standby\n";
+		    exit $OKAY;
+		}
+		case "26" { #chargerOnly
+		    print "CRITICAL: UPS is in Charger Only Mode\n";
+		    exit $CRITICAL;
+		}
                 else {
                     print "WARNING: UPS running status is $out_status_code->{$out_status}\n";
                     exit $WARNING;
