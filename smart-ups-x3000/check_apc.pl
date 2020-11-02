@@ -121,6 +121,9 @@ Commands (supplied with -l argument):
     out_current
         The current in amperes drawn by the load on the UPS
 
+    out_power
+        The current power output in Watts and VA drawn by the load on the UPS
+
     comm_status
         The status of agent's communication with UPS.
 
@@ -169,11 +172,13 @@ my $oid_upsBasicOutputStatus            = ".1.3.6.1.4.1.318.1.1.1.4.1.1.0";     
 										# chargerOnly(26)}
 my $oid_upsBasicOutputPhase             = ".1.3.6.1.4.1.318.1.1.1.4.1.2.0";     # INTEGER
 my $oid_upsAdvOutputVoltage             = ".1.3.6.1.4.1.318.1.1.1.4.2.1.0";     # GAUGE
-my $oid_upsAdvOutputHPVoltage		      = ".1.3.6.1.4.1.318.1.1.1.4.3.1.0";	    # GAUGE32
+my $oid_upsAdvOutputHPVoltage		= ".1.3.6.1.4.1.318.1.1.1.4.3.1.0";	# GAUGE32
 my $oid_upsAdvOutputFrequency           = ".1.3.6.1.4.1.318.1.1.1.4.2.2.0";     # GAUGE
 my $oid_upsAdvOutputLoad                = ".1.3.6.1.4.1.318.1.1.1.4.2.3.0";     # GAUGE
 my $oid_upsAdvOutputCurrent             = ".1.3.6.1.4.1.318.1.1.1.4.2.4.0";     # GAUGE
-my $oid_upsAdvOutputHPCurrent		      = ".1.3.6.1.4.1.318.1.1.1.4.3.4.0";	    # GAUGE32
+my $oid_upsAdvOutputHPCurrent		= ".1.3.6.1.4.1.318.1.1.1.4.3.4.0";	# GAUGE32
+my $oid_upsAdvOutputActivePower		= ".1.3.6.1.4.1.318.1.1.1.4.2.8.0";	# INTEGER WATTS
+my $oid_upsAdvOutputApparentPower	= ".1.3.6.1.4.1.318.1.1.1.4.2.9.0";	# INTEGER VA
 my $oid_upsDiagPMTableSize              = ".1.3.6.1.4.1.318.1.1.1.13.2.1.0";    # INTEGER
 my $oid_upsDiagPMSerialNumPrefix        = ".1.3.6.1.4.1.318.1.1.1.13.2.2.1.5."; # DISPLAYSTRING (DISTINCT POWER MODULE SERIAL NUMBER)
 my $oid_upsDiagPMStatusPrefix           = ".1.3.6.1.4.1.318.1.1.1.13.2.2.1.2."; # INTEGER {unknown (1),notInstalled (2),offOk (3),onOk (4),offFail (5),onFail (6),lostComm (7)} (DISTINCT POWER MODULE STATUS)
@@ -296,13 +301,13 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
                 $exitCode = $UNKNOWN;
             } else {
                 if (defined $critical_threshold && $bat_temp >= $critical_threshold){
-                    print "CRITICAL: Battery Temperature $bat_temp°C is HIGHER or Equal than the critical threshold of $critical_threshold";
+                    print "CRITICAL: Battery Temperature ".$bat_temp."°C is HIGHER or Equal than the critical threshold of $critical_threshold";
                     $exitCode = $CRITICAL;
                 } elsif (defined $warning_threshold && $bat_temp >= $warning_threshold){
-                    print "WARNING: Battery Temperature $bat_temp°C is HIGHER or Equal than the warning threshold of $warning_threshold";
+                    print "WARNING: Battery Temperature ".$bat_temp."°C is HIGHER or Equal than the warning threshold of $warning_threshold";
                     $exitCode = $WARNING;
                 }else{
-                    print "OK: Battery Temperature is: $bat_temp°C";
+                    print "OK: Battery Temperature is: ".$bat_temp."°C";
                     $exitCode = $OKAY; 
                 }
                 print "|'Battery Temperature'=$bat_temp".";$warning_threshold;$critical_threshold\n";
@@ -791,6 +796,13 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
             }
             exit $exitCode;
         }
+	case "out_power" {
+	    my $out_watts = query_oid($oid_upsAdvOutputActivePower);
+	    my $out_va = query_oid($oid_upsAdvOutputApparentPower);
+	    $session->close();
+	    print "OK: Output Power is ".$out_watts."W/".$out_va."VA\n";
+	    exit $OKAY;
+	}
         case "comm_status" {
             my $comm_status = query_oid($oid_upsCommStatus);
             $session->close();
