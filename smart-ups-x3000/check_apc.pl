@@ -130,7 +130,7 @@ my $oid_upsAdvIdentFirmwareRevision     = ".1.3.6.1.4.1.318.1.1.1.1.2.1.0";     
 my $oid_upsAdvIdentDateOfManufacture    = ".1.3.6.1.4.1.318.1.1.1.1.2.2.0";     # DISPLAYSTRING
 my $oid_upsAdvIdentSerialNumber         = ".1.3.6.1.4.1.318.1.1.1.1.2.3.0";     # DISPLAYSTRING
 my $oid_upsAdvIdentSKU			= ".1.3.6.1.4.1.318.1.1.1.1.2.5.0";	# DISPLAYSTRING
-my $oid_upsBasicBatteryStatus           = ".1.3.6.1.4.1.318.1.1.1.2.1.1.0";     # INTEGER {unknown(1),batteryNormal(2),batteryLow(3)}
+my $oid_upsBasicBatteryStatus           = ".1.3.6.1.4.1.318.1.1.1.2.1.1.0";     # INTEGER {unknown(1),batteryNormal(2),batteryLow(3),batteryInFaultCondition(4)}
 my $oid_upsAdvBatteryCapacity           = ".1.3.6.1.4.1.318.1.1.1.2.2.1.0";     # GAUGE
 my $oid_upsAdvBatteryTemperature        = ".1.3.6.1.4.1.318.1.1.1.2.2.2.0";     # GAUGE
 my $oid_upsAdvBatteryRunTimeRemaining   = ".1.3.6.1.4.1.318.1.1.1.2.2.3.0";     # TIMETICKS
@@ -231,6 +231,8 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
             } elsif ($bat_status==3) {
                 print "CRITICAL: Battery Status is LOW and the UPS is unable to sustain the current load.\n";
                 exit $CRITICAL;
+	    } elsif ($bat_status==4) {
+		print "CRITICAL: Battery in FAULT condition.\n";
             } else {
                 print "UNKNOWN: Battery Status is UNKNOWN.\n";
                 exit $UNKNOWN;
