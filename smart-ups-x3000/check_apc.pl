@@ -86,6 +86,10 @@ Commands (supplied with -l argument):
     power_modules
         The status of the Power Modules
 
+    in_status
+        The input voltage with Min/Max (recorded in the last minute) and last transfer to battery cause.
+	** NB: high-precision option supported **
+
     in_phase
         The current AC input phase
 
@@ -146,8 +150,15 @@ my $oid_upsAdvBatteryNominalVoltage     = ".1.3.6.1.4.1.318.1.1.1.2.2.7.0";     
 my $oid_upsAdvBatteryActualVoltage      = ".1.3.6.1.4.1.318.1.1.1.2.2.8.0";     # INTEGER
 my $oid_upsBasicInputPhase              = ".1.3.6.1.4.1.318.1.1.1.3.1.1.0";     # INTEGER
 my $oid_upsAdvInputLineVoltage          = ".1.3.6.1.4.1.318.1.1.1.3.2.1.0";     # GAUGE
-my $oid_upsAdvInputHPLineVoltage	       = ".1.3.6.1.4.1.318.1.1.1.3.3.1.0";	    # GAUGE32
+my $oid_upsAdvInputHPLineVoltage	= ".1.3.6.1.4.1.318.1.1.1.3.3.1.0";	# GAUGE32
+my $oid_upsAdvInputMaxLineVoltage	= ".1.3.6.1.4.1.318.1.1.1.3.2.2.0";	# GAUGE32
+my $oid_upsAdvInputMinLineVoltage	= ".1.3.6.1.4.1.318.1.1.1.3.2.3.0";	# GAUGE32
+my $oid_upsHighPrecInputMaxLineVoltage	= ".1.3.6.1.4.1.318.1.1.1.3.3.2.0";	# GAUGE32
+my $oid_upsHighPrecInputMinLineVoltage	= ".1.3.6.1.4.1.318.1.1.1.3.3.3.0";	# GAUGE32
 my $oid_upsAdvInputFrequency            = ".1.3.6.1.4.1.318.1.1.1.3.2.4.0";     # GAUGE
+my $oid_upsAdvInputLineFailCause	= ".1.3.6.1.4.1.318.1.1.1.3.2.5.0";	# INTEGER {noTransfer(1),highLineVoltage(2),brownout(3),blackout(4),
+										# smallMomentarySag(5),deepMomentarySag(6),smallMomentarySpike(7),
+										# largeMomentarySpike(8),selfTest(9)rateOfVoltageChange(10)
 my $oid_upsBasicOutputStatus            = ".1.3.6.1.4.1.318.1.1.1.4.1.1.0";     # INTEGER {unknown(1),onLine(2),onBattery(3),onSmartBoost(4),timedSleeping(5),softwareBypass(6),
                                                                                 # off(7),rebooting(8),switchedBypass(9),hardwareFailureBypass(10),sleepingUntilPowerReturn(11),onSmartTrim(12)}
 my $oid_upsBasicOutputPhase             = ".1.3.6.1.4.1.318.1.1.1.4.1.2.0";     # INTEGER
@@ -461,6 +472,57 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
             print join(' - ',@exitStrings)."\n";
             exit $exitCode;
         }
+	case "in_status" {
+	    my $in_maxvolts;
+	    my $in_minvolts;
+	    my $in_volts;
+	    if ($high_precision) {
+	        $in_volts = query_oid($oid_upsAdvInputHPLineVoltage)/10;
+		$in_maxvolts = query_oid($oid_upsHighPrecInputMaxLineVoltage)/10;
+		$in_minvolts = query_oid($oid_upsHighPrecInputMinLineVoltage)/10;
+	    } else {
+		$in_volts = query_oid($oid_upsAdvInputLineVoltage);
+		$in_maxvolts = query_oid($oid_upsAdvInputMaxLineVoltage);
+		$in_minvolts = query_oid($oid_upsAdvInputMinLineVoltage);
+	    }
+	    my $transfer_cause = query_oid($oid_upsAdvInputLineFailCause);
+	    $session->close();
+	    my $transfer_reason;
+	    switch($transfer_cause) {
+	        case "1" {
+		    $transfer_reason = "No Transfer";
+		}
+		case "2" {
+		    $transfer_reason = "High Line Voltage";
+		}
+		case "3" {
+		    $transfer_reason = "Brownout";
+		}
+		case "4" {
+	 	    $transfer_reason = "Blackout";
+		}
+		case "5" {
+		    $transfer_reason = "Small Momentary Sag";
+		}
+		case "6" {
+		    $transfer_reason = "Deep Momentary Sag";
+		}
+		case "7" {
+		    $transfer_reason = "Small Momentary Spike";
+		}
+		case "8" {
+		    $transfer_reason = "Large Momentary Spoke";
+		}
+		case "9" {
+		    $transfer_reason = "Self Test";
+		}
+		case "10" {
+		    $transfer_reason = "Rate of Voltage Change";
+		}
+	    }
+	    print "OK: Input Voltage: ".$in_volts."VAC, Max Voltage: ".$in_maxvolts."VAC, Min Voltage: ".$in_minvolts."VAC. Last Transfer Reason: $transfer_reason\n";
+	    exit $OKAY; 
+	}
         case "in_phase" {
             my $in_phase = query_oid($oid_upsBasicInputPhase);
             $session->close();
