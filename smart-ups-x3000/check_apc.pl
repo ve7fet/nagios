@@ -1,9 +1,10 @@
 #!/usr/bin/perl -w
 #
-# check_apc.pl v2.2
+# check_apc.pl v3.0
 #
 # version history
 #
+# 3.0 updated to support Smart-UPS X 3000 with AP9631 networ interface (ve7fet)
 # 2.2 added High Precision value for InputVoltage/OutputVoltage/OutputCurrent (thanks to @fbarton)
 # 2.1 added power modules check
 # 2.0 first release after fork  
@@ -11,6 +12,7 @@
 # Nagios plugin script for checking APC Symmetra UPS.
 #
 # License: GPL v2
+# Copyright (c) 2020 Lee Woldanski
 # Copyright (c) 2017 Davide "Argaar" Foschi
 # Based on previous work by LayerThree B.V.
 # Previous Author: Michael van den Berg
@@ -123,9 +125,11 @@ END
 
 # OIDs for the checks
 my $oid_upsBasicIdentModel              = ".1.3.6.1.4.1.318.1.1.1.1.1.1.0";     # DISPLAYSTRING
+my $oid_upsBasicIdentName		= ".1.3.6.1.4.1.318.1.1.1.1.1.2.0";	# DISPLAYSTRING
 my $oid_upsAdvIdentFirmwareRevision     = ".1.3.6.1.4.1.318.1.1.1.1.2.1.0";     # DISPLAYSTRING
 my $oid_upsAdvIdentDateOfManufacture    = ".1.3.6.1.4.1.318.1.1.1.1.2.2.0";     # DISPLAYSTRING
 my $oid_upsAdvIdentSerialNumber         = ".1.3.6.1.4.1.318.1.1.1.1.2.3.0";     # DISPLAYSTRING
+my $oid_upsAdvIdentSKU			= ".1.3.6.1.4.1.318.1.1.1.1.2.5.0";	# DISPLAYSTRING
 my $oid_upsBasicBatteryStatus           = ".1.3.6.1.4.1.318.1.1.1.2.1.1.0";     # INTEGER {unknown(1),batteryNormal(2),batteryLow(3)}
 my $oid_upsAdvBatteryCapacity           = ".1.3.6.1.4.1.318.1.1.1.2.2.1.0";     # GAUGE
 my $oid_upsAdvBatteryTemperature        = ".1.3.6.1.4.1.318.1.1.1.2.2.2.0";     # GAUGE
@@ -209,11 +213,13 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
 
         case "id" {
             my $ups_name = query_oid($oid_upsBasicIdentModel);
+	    my $ups_sku = query_oid($oid_upsAdvIdentSKU);
+	    my $ups_ident = query_oid($oid_upsBasicIdentName);
             my $ups_firmware = query_oid($oid_upsAdvIdentFirmwareRevision);
             my $ups_serial = query_oid($oid_upsAdvIdentSerialNumber);
             my $ups_manufactdate = query_oid($oid_upsAdvIdentDateOfManufacture);
             $session->close();
-            print "OK: UPS Name: $ups_name, Firmware: $ups_firmware, Microproc S/N: $ups_serial, Manufacture Date: $ups_manufactdate\n";
+            print "OK: UPS Name: $ups_name, UPS SKU: $ups_sku, UPS Ident: $ups_ident, Firmware: $ups_firmware, Microproc S/N: $ups_serial, Manufacture Date: $ups_manufactdate\n";
             exit $OKAY;
         }
         case "bat_status" {
