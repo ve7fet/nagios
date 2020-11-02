@@ -140,6 +140,7 @@ my $oid_upsAdvIdentFirmwareRevision     = ".1.3.6.1.4.1.318.1.1.1.1.2.1.0";     
 my $oid_upsAdvIdentDateOfManufacture    = ".1.3.6.1.4.1.318.1.1.1.1.2.2.0";     # DISPLAYSTRING
 my $oid_upsAdvIdentSerialNumber         = ".1.3.6.1.4.1.318.1.1.1.1.2.3.0";     # DISPLAYSTRING
 my $oid_upsAdvIdentSKU			= ".1.3.6.1.4.1.318.1.1.1.1.2.5.0";	# DISPLAYSTRING
+my $oid_upsAdvTestLastDiagnosticsDate	= ".1.3.6.1.4.1.318.1.1.1.7.2.4.0";	# DISPLAYSTRING
 my $oid_upsBasicBatteryStatus           = ".1.3.6.1.4.1.318.1.1.1.2.1.1.0";     # INTEGER {unknown(1),batteryNormal(2),batteryLow(3),batteryInFaultCondition(4)}
 my $oid_upsAdvBatteryCapacity           = ".1.3.6.1.4.1.318.1.1.1.2.2.1.0";     # GAUGE
 my $oid_upsAdvBatteryTemperature        = ".1.3.6.1.4.1.318.1.1.1.2.2.2.0";     # GAUGE
@@ -245,8 +246,9 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
             my $ups_firmware = query_oid($oid_upsAdvIdentFirmwareRevision);
             my $ups_serial = query_oid($oid_upsAdvIdentSerialNumber);
             my $ups_manufactdate = query_oid($oid_upsAdvIdentDateOfManufacture);
+	    my $ups_selftestdate = query_oid($oid_upsAdvTestLastDiagnosticsDate);
             $session->close();
-            print "OK: UPS Name: $ups_name, UPS SKU: $ups_sku, UPS Ident: $ups_ident, Firmware: $ups_firmware, Microproc S/N: $ups_serial, Manufacture Date: $ups_manufactdate\n";
+            print "OK: UPS Name: $ups_name, UPS SKU: $ups_sku, UPS Ident: $ups_ident, Firmware: $ups_firmware, Microproc S/N: $ups_serial, Manufacture Date: $ups_manufactdate, Last Self Test: $ups_selftestdate\n";
             exit $OKAY;
         }
         case "bat_status" {
