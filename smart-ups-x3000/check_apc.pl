@@ -66,6 +66,9 @@ Commands (supplied with -l argument):
         The UPS battery run time remaining before battery exhaustion
         ** NB: thresholds must be expressed in minutes **
 
+    bat_runtime
+        How long has the UPS been running on battery (minutes)
+
     bat_replace
         Indicates whether the UPS batteries need replacing
 
@@ -240,6 +243,12 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
                 print "UNKNOWN: Battery Status is UNKNOWN.\n";
                 exit $UNKNOWN;
             }
+	}
+	case "bat_runtime" {
+	    my $bat_runtime = query_oid($oid_upsBasicBatteryTimeOnBattery) / 6000; # convert to minutes
+	    $session->close();
+	    print "OK: Current time on battery: $bat_runtime minutes.\n";
+	    exit $OKAY;
         }
         case "bat_capacity" {
             my $bat_capacity = query_oid($oid_upsAdvBatteryCapacity);
