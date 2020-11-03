@@ -33,9 +33,9 @@ getopts("H:C:l:p:t:w:c:hu", \%options);
 (my $script_name = $0) =~ s/.\///;
 
 my $help_info = <<END;
-\n$script_name - v2.2
+\n$script_name - v3.0
 
-Nagios script to check status of an APC Symmetra Uninteruptable Power Supply.
+Nagios script to check status of an APC Smart-UPS X 3000 Uninteruptable Power Supply.
 
 Usage:
 -H  Address of hostname of UPS (required)
@@ -51,16 +51,19 @@ Usage:
 Commands (supplied with -l argument):
 
     id
-        The UPS model name (e.g. 'APC Smart-UPS 600') and interlan info about Firmware, CPU S/N and manufacturing date
+        The UPS Model Name (e.g. 'APC Smart-UPS X 3000'), SKU, Firmware, UPS Name, 
+	CPU S/N, Manufacturing Date, and Last Self-test Date
 
     bat_status
-        The status of the UPS batteries
+        The status of the UPS batteries and Last Replaced Date
 
     bat_capacity
         The remaining battery capacity expressed in percent of full capacity
+	** NB: thresholds are percentage of full capacity **
 
     bat_temp
-        The current internal UPS temperature expressed in Celsius
+        The current internal UPS (battery) temperature (Celsius)
+	** NB: thresholds are for temperature above nominal **
 
     bat_run_remaining
         The UPS battery run time remaining before battery exhaustion
@@ -71,17 +74,21 @@ Commands (supplied with -l argument):
 
     bat_replace
         Indicates whether the UPS batteries need replacing
+	** NB: WARNING raised if batteries need replacing **
 
     bat_num_batt
         The number of external battery packs connected to the UPS
+	** NB: thresholds are humber of expected external battery packs **
 
     bat_num_bad_batt
         The number of external battery packs connected to the UPS that are defective
+	** NB: thresholds are number of defective batteries **
 
     bat_act_volt
         The actual battery bus voltage in Volts
-        ** NB: thresholds must be expressed in range as nearest values. ex: normal=220, warning=215:225, critical=210:230 **
-        ** Additionally, the checks will look for Nominal Voltage (as returned by the UPS), and exit as CRITICAL if Actual Voltage is LOWER or Equal **
+        ** NB: thresholds must be expressed in range as nearest values. ex: normal=120, warning=115:125, critical=110:130 **
+        ** The checks will look for Nominal Voltage (hard-coded to 134V), and exit as CRITICAL if Actual Voltage is LOWER or Equal **
+	** The check will also exit as CRITICAL if the Actual Voltage is >= 140V (overcharge condition) ** 
         
     power_modules
         The status of the Power Modules
@@ -91,35 +98,41 @@ Commands (supplied with -l argument):
 	** NB: high-precision option supported **
 
     in_phase
-        The current AC input phase
+        The current number of AC input phases
+	** NB: thresholds are number of phases less than nominal **
 
     in_volt
         The current utility line voltage in VAC
-        ** NB: thresholds must be expressed in range as nearest values. ex: normal=220, warning=215:225, critical=210:230 **
+        ** NB: thresholds must be expressed in range as nearest values. ex: normal=120, warning=115:125, critical=110:130 **
+	** high-precision option supported **
 
     in_freq
         The current input frequency to the UPS system in Hz
-        ** NB: thresholds must be expressed in range as nearest values. ex: normal=50, warning=45:55, critical=40:60 **
+        ** NB: thresholds must be expressed in range as nearest values. ex: normal=60, warning=55:65, critical=50:70 **
 
     out_status
-        The current state of the UPS
+        The current mode of the UPS
 
     out_phase
-        The current output phase
+        The current number of output phases
+	** NB: thresholds are number of phases less than nominal **
 
     out_volt
         The output voltage of the UPS system in VAC
-        ** NB: thresholds must be expressed in range as nearest values. ex: normal=220, warning=215:225, critical=210:230 **
+        ** NB: thresholds must be expressed in range as nearest values. ex: normal=120, warning=115:125, critical=110:130 **
+	** high-precision option supported **
 
     out_freq
         The current output frequency of the UPS system in Hz
-        ** NB: thresholds must be expressed in range as nearest values. ex: normal=50, warning=45:55, critical=40:60 **
+        ** NB: thresholds must be expressed in range as nearest values. ex: normal=60, warning=55:65, critical=50:70 **
 
     out_load
         The current UPS load expressed in percent of rated capacity
+	** NB: thresholds expressed in percent of rated capacity **
 
     out_current
         The current in amperes drawn by the load on the UPS
+	** NB: thresholds expressed in amps **
 
     out_power
         The current power output in Watts and VA drawn by the load on the UPS
@@ -127,7 +140,7 @@ Commands (supplied with -l argument):
     comm_status
         The status of agent's communication with UPS.
 
-No command is supplied, the script return OKAY with the UPS model information.
+If no command is supplied, the script returns OK with the UPS model information.
 
 Example:
 $script_name -H ups1.domain.local -C public -l bat_status
@@ -392,7 +405,7 @@ if (!defined $options{l}) {  # If no command was given, just output the UPS mode
         }
         case "bat_act_volt" {
 #            my $bat_nom_volt = query_oid($oid_upsAdvBatteryNominalVoltage);
-#            VE7FET NominalVoltage OID not supported, hard code to 137
+#            VE7FET NominalVoltage OID not supported, hard code to 134
 	    my $bat_nom_volt = "134";
             my $bat_act_volt = query_oid($oid_upsAdvBatteryActualVoltage);
             $session->close();
